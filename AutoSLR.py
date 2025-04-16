@@ -69,7 +69,7 @@ def _(query, requests):
 def _(ids, mo, pl, requests):
     import itertools
     import json
-    page_limit = 500
+    page_limit = 250
     table_schema = {
         "paperId": pl.String, 
         "DOI": pl.String,
@@ -99,7 +99,6 @@ def _(ids, mo, pl, requests):
     reference_df = pl.DataFrame(schema=table_schema)
 
     def extract_DOI(el: dict) -> dict:
-        print(el)
         return el | {"DOI": el.get("externalIds", {}).get("DOI") if isinstance(el.get("externalIds"), dict) else None}
 
     def create_table_row(el: dict) -> dict:
@@ -112,24 +111,27 @@ def _(ids, mo, pl, requests):
             json={"ids": page_ids}
         ).json()
         mo.stop("error" in details_request, output=details_request)
-    
+
         search_df = pl.concat([
             search_df,
-            pl.from_dicts(map(create_table_row, map(extract_DOI, details_request)))
+            pl.from_dicts(map(create_table_row, map(extract_DOI, details_request)),
+                          infer_schema_length=None)
         ])
 
         citation_df = pl.concat([
             citation_df,
             pl.from_dicts(map(create_table_row, 
                               map(extract_DOI, 
-                                  itertools.chain.from_iterable(map(lambda el: el["citations"], details_request)))))
+                                  itertools.chain.from_iterable(map(lambda el: el["citations"], details_request)))),
+                          infer_schema_length=None)
         ])
-    
+
         reference_df = pl.concat([
             citation_df,
             pl.from_dicts(map(create_table_row, 
                               map(extract_DOI, 
-                                  itertools.chain.from_iterable(map(lambda el: el["references"], details_request)))))
+                                  itertools.chain.from_iterable(map(lambda el: el["references"], details_request)))),
+                          infer_schema_length=None)
         ])
 
     return (
