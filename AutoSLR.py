@@ -39,10 +39,26 @@ def _(mo):
     q1 = "(BPMN + manufacturing) | (manufacturing + simulation) | (BPMN + simulation)"
     q2 = "BPMn + manufacturing + simulation"
 
-    query = mo.ui.text(placeholder="Search...", label="Filter: ", value=q1, full_width=True)
+    query = mo.ui.text(placeholder="Search...", label="Search words: ", value=q2, full_width=True)
 
     mo.vstack([query])
     return q1, q2, query
+
+
+@app.cell
+def _(mo, query):
+    import re
+    words = set(word.lower() for word in re.findall(r'\b\w+\b', query.value))
+
+    min_citations = mo.ui.number(start=0, label="Minimum citations", value=10, full_width=True)
+
+    remove_no_doi = mo.ui.switch(label="Remove results with no DOI", value=True)
+
+    terms_to_filter = mo.ui.array(elements= [mo.ui.text(placeholder="Term", value=term) for term in words], 
+                                  label="Terms to filter")
+
+    mo.vstack([min_citations, remove_no_doi, terms_to_filter], align="start")
+    return min_citations, re, remove_no_doi, terms_to_filter, words
 
 
 @app.cell
@@ -159,6 +175,22 @@ def _(mo):
     return
 
 
+@app.cell
+def _(min_citations, pl, remove_no_doi, terms_to_filter):
+    def apply_filters(df: pl.DataFrame) -> pl.DataFrame:
+        filterd_df = df.filter((pl.col("title").str.contains_any(terms_to_filter.value)) |
+                                              (pl.col("abstract").str.contains_any(terms_to_filter.value))
+                                             )
+
+        filterd_df = filterd_df.filter(pl.col("citationCount") >= min_citations.value)
+
+        if remove_no_doi.value:
+            filterd_df = filterd_df.filter(pl.col("DOI").is_not_null())
+
+        return filterd_df
+    return (apply_filters,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""## Dataframe from search""")
@@ -184,8 +216,8 @@ def _(citation_df, mo):
 
 
 @app.cell(hide_code=True)
-def _(citation_df, mo, pl):
-    mo.vstack([mo.md("### Filtered dataset"), citation_df.filter((pl.col("title").str.contains_any(["bpmn", "simulation", "manufacturing"])) | (pl.col("abstract").str.contains_any(["bpmn", "simulation", "manufacturing"])))])
+def _(apply_filters, citation_df, mo):
+    mo.vstack([mo.md("### Filtered dataset"), apply_filters(citation_df)])
     return
 
 
@@ -202,8 +234,8 @@ def _(mo, reference_df):
 
 
 @app.cell(hide_code=True)
-def _(mo, pl, reference_df):
-    mo.vstack([mo.md("### Filtered dataset"), reference_df.filter((pl.col("title").str.contains_any(["bpmn", "simulation", "manufacturing"])) | (pl.col("abstract").str.contains_any(["bpmn", "simulation", "manufacturing"])))]) 
+def _(apply_filters, mo, reference_df):
+    mo.vstack([mo.md("### Filtered dataset"), apply_filters(reference_df)]) 
     return
 
 
