@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "crossrefapi>=1.6.0",
     "marimo>=0.12.9",
     "polars>=1.27.1",
+    "pyalex>=0.18",
     "requests>=2.32.3",
 ]
