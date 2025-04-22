@@ -39,7 +39,7 @@ def _(mo):
 @app.cell
 def _(mo):
     q1 = "(BPMN + manufacturing) | (manufacturing + simulation) | (BPMN + simulation)"
-    q2 = "BPMn + manufacturing + simulation"
+    q2 = "BPMN + manufacturing + simulation"
 
     query = mo.ui.text(placeholder="Search...", label="Search words: ", value=q2, full_width=True)
 
@@ -278,8 +278,6 @@ def _(
         @property
         def filtered_citations_df(self) -> pl.DataFrame:
             return self._apply_filters(self.citation_df)
-
-
     return List, OpenAlexData, Path, SemanticScholarData, Tuple
 
 
