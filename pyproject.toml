@@ -10,4 +10,7 @@ dependencies = [
     "polars>=1.27.1",
     "pyalex>=0.18",
     "requests>=2.32.3",
+    "sentence-transformers>=4.1.0",
+    "spacy>=3.8.5",
+    "transformers>=4.51.3",
 ]
